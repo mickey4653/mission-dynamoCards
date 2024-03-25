@@ -1,0 +1,7 @@
+streamlit
+langchain
+langchain-google-vertexai
+pypdf
+youtube-transcript-api
+pytube
+tiktoken
