@@ -1,35 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import {useState} from 'react';
+import axios from 'axios';
 
-function App() {
-  const [count, setCount] = useState(0)
+function App(){
+    const [youtubeLink, setYoutubeLink ] = useState("");
+    const [responseData, setResponseData] = useState(null);
+    const [error, setError] = useState(null);
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    const handleLinkChange = (event) =>{
+        setYoutubeLink(event.target.value);
+    };
+
+    const sendLink = async () =>{
+        try{
+            const response = await axios.post("http://localhost:8000/analyze_video", {
+                youtube_link: youtubeLink,
+            });
+            setResponseData(response.data);
+            setError(null); // Clear any Previous errors
+    }catch (error){
+        console.log(error);
+        setError("An error occurred. Please try again later."); // Set Error message
+    }
+};
+
+    return(
+        <div className='App'>
+            <h1>Youtube Link to Flashcards Generator</h1>
+            <input 
+            type="text"
+            placeholder='Paste Youtube Link Here'
+            value={youtubeLink}
+            onChange={handleLinkChange}
+            />
+            <button onClick={sendLink}>
+                Generate Flashcards
+            </button>
+            {error &&  
+            <div className='error'>
+                {error}
+            </div>} {/* Display Error message if error is not null */}
+            {responseData && (
+                <div>
+                    <h2>Response Data: </h2>
+                    <p>{JSON.stringify(responseData, null, 2)}</p>
+                </div>
+                )}
+        </div>
+    )
 }
 
-export default App
+export default App;
