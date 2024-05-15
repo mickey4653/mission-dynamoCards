@@ -40,3 +40,57 @@
 .read-the-docs {
   color: #888;
 }
+
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+.generate-button {
+  background: linear-gradient(to right, #9c27b0, #673ab7);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  /* margin-left: 20px; */
+  font-size: 16px;
+}
+
+.generate-button:hover {
+  background: linear-gradient(to right, #673ab7, #9c27b0);
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+
+.input-container {
+  margin-bottom: 20px;
+}
+
+.input-container input[type="text"] {
+  padding: 10px;
+  width: 300px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  margin-right: 20px;
+}
+
+.input-container button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  background-color: #8A2BE2; /* Purple */
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.input-container button:hover {
+  background-color: #6A0DAD; /* Darker Purple on hover */
+}

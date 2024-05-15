@@ -1,6 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException
 from pydantic import BaseModel, HttpUrl
 from fastapi.middleware.cors import CORSMiddleware as cors_middleware
+from services.genai import (
+    YoutubeProcessor, 
+    GeminiProcessor)
+import logging
+
+# configure log
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class VideoAnalysisRequest(BaseModel):
     youtube_link: HttpUrl
@@ -16,51 +25,41 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+genai_processor = GeminiProcessor(
+        model_name="gemini-pro",
+        project="gemini-dynamo"
+    )
 @app.post("/analyze_video")
 
-def analyze_video(request: VideoAnalysisRequest):
-    from langchain_community.document_loaders.youtube import YoutubeLoader
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
-  
-
-    # Doing the analysis
-    try:
-        youtube_url_str = str(request.youtube_link)  # Convert HttpUrl to string
-        
-        # Extract the video ID from the shortened URL
-        if "youtu.be" in youtube_url_str:
-            video_id = youtube_url_str.split("/")[-1].split("?")[0]
-        else:
-            video_id = youtube_url_str.split("v=")[1].split("&")[0]
-        loader = YoutubeLoader(video_id=video_id, add_video_info=True)
-        docs = loader.load()
-        print(f"On Load: {type(docs)}")
-
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-        result = text_splitter.split_documents(docs)
-
-        print(f"{type(result)}")
-        author = result[0].metadata['author']
-        length = result[0].metadata['length']
-        title = result[0].metadata['title']
-        total_size = len(result)
-        return {
-        "author": author,
-        "length": length,
-        "title": title,
-        "total_size": total_size,
-        "text": result[0].page_content 
-        }
-    except IndexError:
-        print("Error: Unable to extract video ID from the provided YouTube URL.")
-        print(f"YouTube URL: {youtube_url_str}")
-        return {"error": "Invalid YouTube URL format"}
+async def analyze_video(request: VideoAnalysisRequest):
+    try: 
+        # Doing the analysis
+        processor = YoutubeProcessor(genai_processor=genai_processor)
+        result = processor.retrieve_youtube_documents(str(request.youtube_link), verbose=True)
+        logging.info(f"Retrieved documents:", result)  # Debugging statement
+        # summary = genai_processor.generate_document_summary(result, verbose=True)
     
+        if result:
+            # Find key concepts
+            logging.info(f"Number of documents: %s", len(result))  # Debugging statement
+            key_concepts_list = processor.find_key_concepts(result, verbose=True)
+    
+            return {
+            # "Summary ": summary
+            "key_concepts": key_concepts_list
+            }
+        else:
+            raise HTTPException(status_code=404, detail="No documents found")
+    except ValueError as ve:
+        logger.error(f"ValueError: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        return {"error": str(e)}
+        logger.error(f"An unexpected error occurred: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
+    
 @app.get("/root")
-def health():
+def health():   
     return {"status": "ok"}
 
